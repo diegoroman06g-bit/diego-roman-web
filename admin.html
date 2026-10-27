@@ -1,0 +1,29 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Work+Sans:wght@400;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/styles.css"></head><body>
+<header><b>Panel de Diego</b><nav><a class="keep" href="/">Ver sitio</a></nav></header>
+<section>
+<div class="card"><label>Contraseña de administrador<input type="password" id="pw"></label><button class="btn" id="enter">Entrar</button></div>
+<div id="panel" hidden>
+<div class="card"><h3>Nueva galería</h3><br>
+<label>Nombre<input id="title" placeholder="Torneo Sub-17"></label>
+<label>Tipo<select id="vis"><option value="private">Privada (solo con enlace)</option><option value="public">Pública (aparece en el sitio)</option></select></label>
+<label>Fotos<input type="file" id="files" multiple accept="image/*"></label>
+<button class="btn" id="create">Subir y crear galería</button><p id="msg" style="margin-top:12px"></p></div>
+<h2>Tus galerías</h2><div id="list"></div></div></section>
+<script type="module">
+import {upload} from "https://esm.sh/@vercel/blob@0.27.0/client";
+const $=i=>document.getElementById(i);let pw="";
+const H=()=>({"x-admin-password":pw,"content-type":"application/json"});
+async function load(){const r=await fetch("/api/galleries?admin=1",{headers:H()});if(!r.ok){alert("Contraseña incorrecta");return false}
+ const l=await r.json();$("list").innerHTML=l.map(g=>{const url=location.origin+"/galerias.html?g="+g.slug;return `<div class="card"><div class="bar"><b>${g.title}</b><span class="tag">${g.visibility==="public"?"Pública":"Privada"} · ${g.count} fotos</span></div>
+<input readonly value="${url}" onclick="this.select()"><div class="row"><button class="btn" onclick="navigator.clipboard.writeText('${url}');this.textContent='Copiado'">Copiar enlace</button><a class="btn ghost" style="color:var(--ink)" href="${url}" target="_blank">Abrir</a>
+<button class="btn ghost" style="color:#b00" data-del="${g.slug}">Eliminar</button></div></div>`}).join("")||"<p>Aún no hay galerías.</p>";return true}
+$("list").onclick=async e=>{const s=e.target.dataset.del;if(!s||!confirm("¿Eliminar esta galería?"))return;await fetch("/api/galleries?slug="+s,{method:"DELETE",headers:H()});load()};
+$("enter").onclick=async()=>{pw=$("pw").value;if(await load())$("panel").hidden=false};
+$("create").onclick=async()=>{const t=$("title").value.trim(),fs=[...$("files").files];if(!t||!fs.length)return $("msg").textContent="Escribe un nombre y elige fotos.";
+ const slug=t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")+"-"+Math.random().toString(36).slice(2,8);
+ const photos=[];try{for(let i=0;i<fs.length;i++){$("msg").textContent=`Subiendo ${i+1} de ${fs.length}…`;
+  const b=await upload(`photos/${slug}/${fs[i].name}`,fs[i],{access:"public",handleUploadUrl:"/api/upload",clientPayload:pw});photos.push(b.url)}
+  const r=await fetch("/api/galleries",{method:"POST",headers:H(),body:JSON.stringify({slug,title:t,visibility:$("vis").value,photos})});
+  if(!r.ok)throw 0;$("msg").textContent="Galería creada.";$("title").value="";$("files").value="";load()}catch(e){$("msg").textContent="Error al subir. Revisa la contraseña y la configuración de Blob."}};
+</script></body></html>

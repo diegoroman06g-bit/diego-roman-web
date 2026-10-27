@@ -1,0 +1,14 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Galerías | Diego Román</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Work+Sans:wght@400;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/styles.css"></head><body>
+<header><b><a href="/" style="text-decoration:none">Diego Román</a></b><nav><a class="keep" href="/">Inicio</a></nav></header>
+<section><div id="app"><p>Cargando…</p></div></section>
+<script>
+const app=document.getElementById("app"),slug=new URLSearchParams(location.search).get("g");
+const dl=u=>u+(u.includes("?")?"&":"?")+"download=1";
+const show=g=>{app.innerHTML=`<div class="bar"><h2>${g.title}</h2></div><div class="grid">${g.photos.map(u=>`<div class="ph"><img src="${u}" loading="lazy" alt=""><a class="dl" href="${dl(u)}">Descargar</a></div>`).join("")}</div>`};
+(async()=>{try{
+ if(slug){const r=await fetch("/api/galleries?slug="+encodeURIComponent(slug));if(!r.ok)throw 0;show(await r.json());}
+ else{const l=await(await fetch("/api/galleries")).json();
+  app.innerHTML="<h2>Galerías públicas</h2>"+(l.length?'<div class="grid">'+l.map(g=>`<a class="card" style="margin:0;text-decoration:none" href="?g=${g.slug}"><h3>${g.title}</h3><small>${g.count} fotos</small></a>`).join("")+"</div>":"<p>Aún no hay galerías públicas.</p>");}
+}catch(e){app.innerHTML="<h2>Galería no encontrada</h2><p>Revisa que el enlace esté completo o pídele uno nuevo a Diego.</p>"}})();
+</script></body></html>
